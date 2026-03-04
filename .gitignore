@@ -1,0 +1,61 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+*.egg
+.eggs/
+
+# ML models and data
+backend/ml/saved_models/*.joblib
+backend/ml/saved_models/*.pkl
+backend/data/
+
+# Env files
+.env
+.env.local
+.env.production
+
+# Next.js
+frontend/.next/
+frontend/node_modules/
+frontend/out/
+
+# Docker
+.docker/
+
+# Logs
+*.log
+logs/
+
+# DB
+*.db
+*.sqlite
+
+# Testing
+.pytest_cache/
+htmlcov/
+.coverage
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Monitoring data
+monitoring/grafana/
+
+# SSL certs
+nginx/ssl/

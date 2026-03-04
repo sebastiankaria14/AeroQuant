@@ -1,0 +1,77 @@
+{
+  "best_model_name": "xgboost",
+  "feature_cols": [
+    "airline",
+    "source_city",
+    "destination_city",
+    "stops",
+    "departure_time",
+    "arrival_time",
+    "flight_class",
+    "duration_hours",
+    "days_left",
+    "route_frequency"
+  ],
+  "cat_cols": [
+    "airline",
+    "source_city",
+    "destination_city",
+    "stops",
+    "departure_time",
+    "arrival_time",
+    "flight_class"
+  ],
+  "num_cols": [
+    "duration_hours",
+    "days_left",
+    "route_frequency"
+  ],
+  "metrics": {
+    "xgboost": {
+      "model": "XGBoost",
+      "rmse": 4387.582325287316,
+      "mae": 2624.238356875591,
+      "r2": 0.9626701684081366
+    },
+    "lightgbm": {
+      "model": "LightGBM",
+      "rmse": 4491.652689970588,
+      "mae": 2738.0232587034375,
+      "r2": 0.960878291794135
+    },
+    "best": {
+      "model": "XGBoost",
+      "rmse": 4387.582325287316,
+      "mae": 2624.238356875591,
+      "r2": 0.9626701684081366
+    }
+  },
+  "unique_airlines": [
+    "Air India",
+    "AirAsia",
+    "Air_India",
+    "GO FIRST",
+    "GO_FIRST",
+    "Indigo",
+    "SpiceJet",
+    "StarAir",
+    "Trujet",
+    "Vistara"
+  ],
+  "unique_sources": [
+    "Bangalore",
+    "Chennai",
+    "Delhi",
+    "Hyderabad",
+    "Kolkata",
+    "Mumbai"
+  ],
+  "unique_destinations": [
+    "Bangalore",
+    "Chennai",
+    "Delhi",
+    "Hyderabad",
+    "Kolkata",
+    "Mumbai"
+  ]
+}

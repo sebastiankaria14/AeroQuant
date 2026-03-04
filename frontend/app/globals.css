@@ -1,0 +1,107 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light mode vars (unused — we default to dark) */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --primary: 158 100% 41%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 222 47% 11%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 158 100% 41%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 158 100% 41%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 224 26% 11%;
+    --foreground: 210 40% 96%;
+    --card: 223 25% 14%;
+    --card-foreground: 210 40% 96%;
+    --primary: 158 100% 41%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 223 25% 18%;
+    --secondary-foreground: 210 40% 96%;
+    --muted: 223 25% 18%;
+    --muted-foreground: 215 20.2% 55%;
+    --accent: 223 25% 22%;
+    --accent-foreground: 210 40% 96%;
+    --destructive: 0 62.8% 55%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 223 25% 22%;
+    --input: 223 25% 22%;
+    --ring: 158 100% 41%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply dark;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    background-image:
+      radial-gradient(ellipse at 20% 50%, rgba(0, 208, 156, 0.03) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, rgba(59, 130, 246, 0.03) 0%, transparent 50%);
+  }
+}
+
+@layer utilities {
+  /* Price up/down colours matching Groww style */
+  .price-up   { @apply text-brand-green; }
+  .price-down { @apply text-brand-red; }
+
+  /* Glass card */
+  .glass-card {
+    @apply bg-surface/80 backdrop-blur-sm border border-white/5 rounded-xl;
+  }
+
+  /* Shimmer loading skeleton */
+  .skeleton {
+    @apply relative overflow-hidden bg-surface-secondary rounded;
+  }
+  .skeleton::after {
+    content: "";
+    @apply absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/5 to-transparent;
+    animation: shimmer 2s infinite;
+  }
+
+  /* Custom scrollbar */
+  .custom-scroll::-webkit-scrollbar { width: 4px; }
+  .custom-scroll::-webkit-scrollbar-track { @apply bg-transparent; }
+  .custom-scroll::-webkit-scrollbar-thumb { @apply bg-white/10 rounded-full; }
+  .custom-scroll::-webkit-scrollbar-thumb:hover { @apply bg-white/20; }
+}
+
+/* Recharts overrides */
+.recharts-tooltip-wrapper .custom-tooltip {
+  @apply glass-card p-3 shadow-xl text-sm;
+}
+
+.recharts-cartesian-axis-tick text {
+  @apply fill-muted-foreground text-xs;
+}
+
+.recharts-cartesian-grid line {
+  @apply stroke-border/50;
+}

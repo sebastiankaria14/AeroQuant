@@ -1,0 +1,105 @@
+"use client";
+
+import React, { useRef } from "react";
+import { useScroll, useTransform, motion, MotionValue } from "framer-motion";
+
+// ─── ContainerScroll ────────────────────────────────────────────────────────
+// Scroll-driven 3D perspective tilt effect (Aceternity-style).
+// Wrap any card/image with this component inside a tall scroll container.
+
+interface ContainerScrollProps {
+  titleComponent: string | React.ReactNode;
+  children: React.ReactNode;
+}
+
+export function ContainerScroll({
+  titleComponent,
+  children,
+}: ContainerScrollProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end start"],
+  });
+
+  const scaleDimensions = useParallax(scrollYProgress);
+
+  const rotate    = useTransform(scrollYProgress, [0, 1], [20, 0]);
+  const scale     = useTransform(scrollYProgress, [0, 1], [1.04, 1]);
+  const translate = useTransform(scrollYProgress, [0, 1], [0, -100]);
+
+  return (
+    <div
+      className="h-[70rem] md:h-[80rem] flex items-start justify-center relative"
+      ref={containerRef}
+    >
+      <div
+        className="py-10 md:py-40 w-full relative"
+        style={{ perspective: "1000px" }}
+      >
+        <Header translate={translate} titleComponent={titleComponent} />
+        <Card
+          rotate={rotate}
+          translate={translate}
+          scale={scale}
+        >
+          {children}
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+// ─── Internals ───────────────────────────────────────────────────────────────
+
+function useParallax(scrollYProgress: MotionValue<number>) {
+  const isMobile =
+    typeof window !== "undefined" && window.innerWidth <= 768;
+  return isMobile
+    ? [0.7, 0.9]
+    : [1.04, 1];
+}
+
+function Header({
+  translate,
+  titleComponent,
+}: {
+  translate: MotionValue<number>;
+  titleComponent: string | React.ReactNode;
+}) {
+  return (
+    <motion.div
+      style={{ translateY: translate }}
+      className="div max-w-5xl mx-auto text-center"
+    >
+      {titleComponent}
+    </motion.div>
+  );
+}
+
+function Card({
+  rotate,
+  scale,
+  children,
+}: {
+  rotate: MotionValue<number>;
+  scale: MotionValue<number>;
+  translate: MotionValue<number>;
+  children: React.ReactNode;
+}) {
+  return (
+    <motion.div
+      style={{
+        rotateX: rotate,
+        scale,
+        boxShadow:
+          "0 0 #0000004d, 0 9px 20px #0000004a, 0 37px 37px #00000042, 0 84px 50px #00000026, 0 149px 60px #0000000a, 0 233px 65px #00000003",
+      }}
+      className="max-w-5xl -mt-12 mx-auto w-full border-4 border-[#6C6C6C] p-2 md:p-6 bg-[#222222] rounded-[30px] shadow-2xl"
+    >
+      <div className="h-full w-full overflow-hidden rounded-2xl bg-surface md:rounded-2xl md:p-4">
+        {children}
+      </div>
+    </motion.div>
+  );
+}

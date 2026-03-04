@@ -1,0 +1,173 @@
+version: '3.9'
+
+services:
+  # ─── PostgreSQL ─────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: aeroquant_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-aeroquant}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aeroquant_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-aeroquant_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aeroquant"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aeroquant_net
+
+  # ─── Redis ──────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: aeroquant_redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis_secret}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aeroquant_net
+
+  # ─── FastAPI Backend ─────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: aeroquant_backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aeroquant}:${POSTGRES_PASSWORD:-aeroquant_secret}@postgres:5432/${POSTGRES_DB:-aeroquant_db}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_secret}@redis:6379/0
+      SECRET_KEY: ${SECRET_KEY:-super_secret_key_change_in_production}
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 1440
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      S3_BUCKET: ${S3_BUCKET:-aeroquant-models}
+    volumes:
+      - ./backend:/app
+      - model_storage:/app/ml/saved_models
+      - ./data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    expose:
+      - "8000"
+    networks:
+      - aeroquant_net
+
+  # ─── Next.js Frontend ────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost/api}
+    container_name: aeroquant_frontend
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost/api}
+    expose:
+      - "3000"
+    depends_on:
+      - backend
+    networks:
+      - aeroquant_net
+
+  # ─── Nginx Reverse Proxy ─────────────────────────────────────────────────────
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: aeroquant_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - aeroquant_net
+
+  # ─── Model Trainer (one-shot job) ───────────────────────────────────────────
+  model_trainer:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: aeroquant_trainer
+    restart: "no"
+    command: ["python", "ml/train.py"]
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aeroquant}:${POSTGRES_PASSWORD:-aeroquant_secret}@postgres:5432/${POSTGRES_DB:-aeroquant_db}
+    volumes:
+      - ./backend:/app
+      - model_storage:/app/ml/saved_models
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - aeroquant_net
+    profiles:
+      - train
+
+  # ─── Prometheus (Monitoring) ─────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: aeroquant_prometheus
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - "9090:9090"
+    networks:
+      - aeroquant_net
+
+  # ─── Grafana ─────────────────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    container_name: aeroquant_grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+    ports:
+      - "3001:3000"
+    networks:
+      - aeroquant_net
+
+volumes:
+  postgres_data:
+  redis_data:
+  model_storage:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  aeroquant_net:
+    driver: bridge
