@@ -10,6 +10,7 @@ Loads trained models and produces price predictions with:
 from __future__ import annotations
 
 import json
+import importlib.util
 from functools import lru_cache
 from pathlib import Path
 from typing import Optional
@@ -21,12 +22,7 @@ import pandas as pd
 from app.core.config import settings
 from app.ml.features import FEATURE_COLS, extract_time_block
 
-# ── Optional SHAP import ──────────────────────────────────────────────────────
-try:
-    import shap as _shap
-    SHAP_AVAILABLE = True
-except ImportError:
-    SHAP_AVAILABLE = False
+SHAP_AVAILABLE = importlib.util.find_spec("shap") is not None
 
 
 # ── Volatility thresholds ─────────────────────────────────────────────────────
@@ -51,7 +47,6 @@ class Predictor:
         self.model_dir = Path(model_dir)
         self.preprocessor = None
         self.model = None
-        self.secondary_model = None
         self.meta: dict = {}
         self.model_name: str = "xgboost"
         self._shap_explainer = None
@@ -69,12 +64,10 @@ class Predictor:
             self.meta = json.load(f)
 
         self.model_name = self.meta.get("best_model_name", "xgboost")
-        secondary_name = "lightgbm" if self.model_name == "xgboost" else "xgboost"
-        secondary_path = model_path / f"{secondary_name}_model.joblib"
-        self.secondary_model = joblib.load(secondary_path) if secondary_path.exists() else self.model
 
         if SHAP_AVAILABLE:
             try:
+                import shap as _shap
                 self._shap_explainer = _shap.TreeExplainer(self.model)
             except Exception:
                 self._shap_explainer = None
@@ -105,10 +98,10 @@ class Predictor:
         self._ensure_models_loaded()
         assert self.preprocessor is not None
         assert self.model is not None
-        assert self.secondary_model is not None
         df = pd.DataFrame([row])[FEATURE_COLS]
         X = self.preprocessor.transform(df)
-        return float(self.model.predict(X)[0]), float(self.secondary_model.predict(X)[0])
+        primary_pred = float(self.model.predict(X)[0])
+        return primary_pred, primary_pred
 
     # ── SHAP ──────────────────────────────────────────────────────────────────
     def explain(self, payload) -> "ExplainOutput":

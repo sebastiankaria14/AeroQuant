@@ -7,17 +7,14 @@ Falls back to a lightweight trend extrapolation when Prophet is not available.
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
 import numpy as np
 import pandas as pd
 
-try:
-    from prophet import Prophet
-    PROPHET_AVAILABLE = True
-except ImportError:
-    PROPHET_AVAILABLE = False
+PROPHET_AVAILABLE = importlib.util.find_spec("prophet") is not None
 
 
 def _make_cache_key(source: str, destination: str, airline: Optional[str], flight_class: str, horizon: int) -> str:
@@ -116,6 +113,8 @@ def run_forecast(
 
     if PROPHET_AVAILABLE and len(historical_df) >= 10:
         try:
+            from prophet import Prophet
+
             m = Prophet(
                 yearly_seasonality=False,
                 weekly_seasonality=True,

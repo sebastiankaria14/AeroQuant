@@ -1174,9 +1174,10 @@ def auth_me(authorization: Optional[str] = None):
 
 # ── Entry point ────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8000))
     print("\n  AeroQuant Lite Server starting...")
     print(f"   Data dir  : {DATA_DIR}")
     print(f"   Model dir : {MODEL_DIR}")
     print("\n   API docs  : http://localhost:8000/docs")
     print("   Frontend  : http://localhost:3000\n")
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")

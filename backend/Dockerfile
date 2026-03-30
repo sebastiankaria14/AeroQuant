@@ -21,5 +21,5 @@ RUN mkdir -p ml/saved_models data
 
 EXPOSE 8000
 
-# Start with Uvicorn
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+# Start with Uvicorn. Render provides PORT; one worker keeps memory use under control.
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers ${WEB_CONCURRENCY:-1}
