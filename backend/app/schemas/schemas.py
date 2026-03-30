@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 # ─── Auth ────────────────────────────────────────────────────────────────────
@@ -15,13 +15,14 @@ class UserRegister(BaseModel):
 
 
 class UserLogin(BaseModel):
-    email: EmailStr
+    username: str
     password: str
 
 
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    username: str = ""
 
 
 class UserOut(BaseModel):
@@ -53,6 +54,8 @@ class PredictionOutput(BaseModel):
     model_used: str
     currency: str = "INR"
     input_echo: PredictionInput
+
+    model_config = ConfigDict(protected_namespaces=())
 
 
 # ─── Routes ───────────────────────────────────────────────────────────────────
@@ -181,6 +184,8 @@ class PredictionOutputV2(BaseModel):
     buy_wait: BuyWaitRecommendation
     explain: ExplainOutput
 
+    model_config = ConfigDict(protected_namespaces=())
+
 
 # ─── Forecast ────────────────────────────────────────────────────────────────
 class ForecastPoint(BaseModel):
@@ -238,7 +243,7 @@ class ModelMetricsOut(BaseModel):
     is_best: bool
     trained_at: datetime
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
 
 
 # ─── Price Alert ──────────────────────────────────────────────────────────────
@@ -276,6 +281,8 @@ class AdminMetrics(BaseModel):
     active_alerts: int
     total_users: int
     cache_hit_rate: float
+
+    model_config = ConfigDict(protected_namespaces=())
 
 
 # ─── Seasonal Heatmap ─────────────────────────────────────────────────────────

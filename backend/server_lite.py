@@ -23,7 +23,7 @@ import pandas as pd
 import uvicorn
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 BASE_DIR   = Path(__file__).parent
@@ -151,6 +151,8 @@ class PredictionOutput(BaseModel):
     model_used: str
     currency: str = "INR"
     input_echo: PredictionInput
+
+    model_config = ConfigDict(protected_namespaces=())
 
 
 # ── Endpoints ──────────────────────────────────────────────────────────────────
