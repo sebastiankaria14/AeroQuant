@@ -48,25 +48,38 @@ def _compute_volatility(std_dev: float, avg_price: float) -> float:
 
 class Predictor:
     def __init__(self, model_dir: str = settings.MODEL_DIR):
-        model_path = Path(model_dir)
+        self.model_dir = Path(model_dir)
+        self.preprocessor = None
+        self.model = None
+        self.secondary_model = None
+        self.meta: dict = {}
+        self.model_name: str = "xgboost"
+        self._shap_explainer = None
+        self._models_loaded = False
+
+    def _ensure_models_loaded(self) -> None:
+        if self._models_loaded:
+            return
+
+        model_path = self.model_dir
         self.preprocessor = joblib.load(model_path / "preprocessor.joblib")
         self.model = joblib.load(model_path / "best_model.joblib")
 
         with open(model_path / "metadata.json") as f:
             self.meta = json.load(f)
 
-        self.model_name: str = self.meta.get("best_model_name", "xgboost")
+        self.model_name = self.meta.get("best_model_name", "xgboost")
         secondary_name = "lightgbm" if self.model_name == "xgboost" else "xgboost"
         secondary_path = model_path / f"{secondary_name}_model.joblib"
         self.secondary_model = joblib.load(secondary_path) if secondary_path.exists() else self.model
 
-        # Initialise SHAP explainer once (tree-based)
-        self._shap_explainer = None
         if SHAP_AVAILABLE:
             try:
                 self._shap_explainer = _shap.TreeExplainer(self.model)
             except Exception:
-                pass
+                self._shap_explainer = None
+
+        self._models_loaded = True
 
     # ── Helpers ───────────────────────────────────────────────────────────────
     def time_to_block(self, time_str: str) -> str:
@@ -89,6 +102,10 @@ class Predictor:
 
     def _raw_predict(self, row: dict) -> tuple[float, float]:
         """Return (primary_pred, secondary_pred)."""
+        self._ensure_models_loaded()
+        assert self.preprocessor is not None
+        assert self.model is not None
+        assert self.secondary_model is not None
         df = pd.DataFrame([row])[FEATURE_COLS]
         X = self.preprocessor.transform(df)
         return float(self.model.predict(X)[0]), float(self.secondary_model.predict(X)[0])
@@ -96,6 +113,9 @@ class Predictor:
     # ── SHAP ──────────────────────────────────────────────────────────────────
     def explain(self, payload) -> "ExplainOutput":
         from app.schemas.schemas import ExplainOutput, ShapFeature
+
+        self._ensure_models_loaded()
+        assert self.preprocessor is not None
 
         row = self._build_row(payload)
         df = pd.DataFrame([row])[FEATURE_COLS]
