@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMutation } from "@tanstack/react-query";
@@ -11,6 +11,8 @@ import toast from "react-hot-toast";
 import { BuyWaitCard } from "@/components/ui/BuyWaitCard";
 import { ShapChart } from "@/components/charts/ShapChart";
 import { cn } from "@/lib/utils";
+
+export const dynamic = "force-dynamic";
 
 const AIRLINES = ["Air India", "IndiGo", "SpiceJet", "Vistara", "GO FIRST", "AirAsia"];
 const CITIES = ["Delhi", "Mumbai", "Bangalore", "Hyderabad", "Kolkata", "Chennai"];
@@ -23,7 +25,7 @@ const inputClass =
   "w-full px-3 py-2.5 rounded-lg bg-surface-secondary border border-border text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-brand-green/50 transition";
 const labelClass = "block text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wide";
 
-export default function PredictionPage() {
+function PredictionContent() {
   const searchParams = useSearchParams();
 
   const [form, setForm] = useState<PredictionInput>({
@@ -293,3 +295,10 @@ export default function PredictionPage() {
   );
 }
 
+export default function PredictionPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-64 text-muted-foreground text-sm">Loading…</div>}>
+      <PredictionContent />
+    </Suspense>
+  );
+}
